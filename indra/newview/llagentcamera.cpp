@@ -161,7 +161,6 @@ LLAgentCamera::LLAgentCamera() :
 	mFocusObjectDist(0.f),
 	mFocusObjectOffset(),
 	mFocusDotRadius( 0.1f ),			// meters
-	mTrackFocusObject(TRUE),
 	mUIOffset(0.f),
 
 	mAtKey(0), // Either 1, 0, or -1... indicates that movement-key is pressed
@@ -225,7 +224,6 @@ void LLAgentCamera::init()
 	mCurrentCameraDistance = getCameraOffsetInitial().magVec() * gSavedSettings.getF32("CameraOffsetScale");
 	mTargetCameraDistance = mCurrentCameraDistance;
 	mCameraZoomFraction = 1.f;
-	mTrackFocusObject = gSavedSettings.getBOOL("TrackFocusObject");
 
 	mInitialized = true;
 }
@@ -1534,8 +1532,8 @@ void LLAgentCamera::updateFocusOffset()
 	validateFocusObject();
 	if (mFocusObject.notNull())
 	{
-		LLVector3d obj_pos = gAgent.getPosGlobalFromAgent(mFocusObject->getRenderPosition());
-		mFocusObjectOffset.setVec(mFocusTargetGlobal - obj_pos);
+		LLVector3d obj_pos = mFocusObject->getPositionGlobal();
+		mFocusObjectOffset.set(mFocusTargetGlobal - obj_pos);
 	}
 }
 
@@ -1619,40 +1617,14 @@ LLVector3d LLAgentCamera::calcFocusPositionTargetGlobal()
 	}
 	else if (!mFocusOnAvatar)
 	{
-		if (mFocusObject.notNull() && !mFocusObject->isDead() && mFocusObject->mDrawable.notNull())
+		if (mFocusObject.notNull() && !mFocusObject->isDead())
 		{
-			LLDrawable* drawablep = mFocusObject->mDrawable;
-			
-			if (mTrackFocusObject &&
-				drawablep && 
-				drawablep->isActive())
-			{
-				if (!mFocusObject->isAvatar())
-				{
-					if (mFocusObject->isSelected())
-					{
-						gPipeline.updateMoveNormalAsync(drawablep);
-					}
-					else if(!drawablep->isState(LLDrawable::ON_MOVE_LIST))
-					{
-						if (drawablep->isState(LLDrawable::MOVE_UNDAMPED))
-						{
-							gPipeline.updateMoveNormalAsync(drawablep);
-						}
-						else
-						{
-							gPipeline.updateMoveDampedAsync(drawablep);
-						}
-					}
-				}
-			}
-			// if not tracking object, update offset based on new object position
-			else
+			if (!gSavedSettings.getBOOL("TrackFocusObject"))
 			{
 				updateFocusOffset();
 			}
-			LLVector3 focus_agent = mFocusObject->getRenderPosition() + mFocusObjectOffset;
-			mFocusTargetGlobal.setVec(gAgent.getPosGlobalFromAgent(focus_agent));
+			//mFocusTargetGlobal = mFocusObject->getPositionGlobal() + (LLVector3d)mFocusObjectOffset;
+			mFocusTargetGlobal = gAgent.getPosGlobalFromAgent(mFocusObject->getRenderPosition() + mFocusObjectOffset);
 		}
 		return mFocusTargetGlobal;
 	}
