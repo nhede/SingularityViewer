@@ -192,6 +192,8 @@ public:
 	const LLSimInfo::item_info_list_t& getLandForSaleAdult() const { return mLandForSaleAdult; }
 	const LLSimInfo::item_info_list_t& getAgentLocation() const { return mAgentLocations; }
 
+	const U64 		&getHandle() const 			{ return mHandle; }
+
 private:
 	U64 mHandle;
 	std::string mName;
@@ -235,8 +237,8 @@ struct LLWorldMapLayer
 
 // We request region data on the world by "blocks" of (MAP_BLOCK_SIZE x MAP_BLOCK_SIZE) regions
 // This is to reduce the number of requests to the asset DB and get things in big "blocks"
-const S32 MAP_MAX_SIZE = 2048;
-const S32 MAP_BLOCK_SIZE = 4;
+const S32 MAP_MAX_SIZE = 16384;
+const S32 MAP_BLOCK_SIZE = 16;
 const S32 MAP_BLOCK_RES = (MAP_MAX_SIZE / MAP_BLOCK_SIZE);
 
 class LLWorldMap : public LLSingleton<LLWorldMap>

@@ -81,12 +81,12 @@ const S32 WORLD_PATCH_SIZE = 16;
 
 extern LLColor4U MAX_WATER_COLOR;
 
-const U32 LLWorld::mWidth = 256;
+U32 LLWorld::mWidth = 256;
 
 // meters/point, therefore mWidth * mScale = meters per edge
 const F32 LLWorld::mScale = 1.f;
 
-const F32 LLWorld::mWidthInMeters = mWidth * mScale;
+F32 LLWorld::mWidthInMeters = mWidth * mScale;
 
 //
 // Functions
@@ -147,7 +147,7 @@ void LLWorld::destroyClass()
 }
 
 
-LLViewerRegion* LLWorld::addRegion(const U64 &region_handle, const LLHost &host)
+LLViewerRegion* LLWorld::addRegion(const U64 &region_handle, const LLHost &host, const U32 &region_size_x, const U32 &region_size_y)
 {
 	LLMemType mt(LLMemType::MTYPE_REGIONS);
 	llinfos << "Add region with handle: " << region_handle << " on host " << host << llendl;
@@ -180,9 +180,11 @@ LLViewerRegion* LLWorld::addRegion(const U64 &region_handle, const LLHost &host)
 
 	U32 iindex = 0;
 	U32 jindex = 0;
+    mWidth = region_size_x;
+	mWidthInMeters = mWidth * mScale;
 	from_region_handle(region_handle, &iindex, &jindex);
-	S32 x = (S32)(iindex/mWidth);
-	S32 y = (S32)(jindex/mWidth);
+	S32 x = (S32)(iindex/256);
+	S32 y = (S32)(jindex/256);
 	llinfos << "Adding new region (" << x << ":" << y << ")" << llendl;
 	llinfos << "Host: " << host << llendl;
 
@@ -224,21 +226,41 @@ LLViewerRegion* LLWorld::addRegion(const U64 &region_handle, const LLHost &host)
 	F32 width = getRegionWidthInMeters();
 
 	LLViewerRegion *neighborp;
+	LLViewerRegion *last_neighborp;
 	from_region_handle(region_handle, &region_x, &region_y);
 
 	// Iterate through all directions, and connect neighbors if there.
 	S32 dir;
 	for (dir = 0; dir < 8; dir++)
 	{
+		last_neighborp = NULL;
 		adj_x = region_x + width * gDirAxes[dir][0];
 		adj_y = region_y + width * gDirAxes[dir][1];
-		to_region_handle(adj_x, adj_y, &adj_handle);
+		if(gDirAxes[dir][0] < 0) adj_x = region_x - WORLD_PATCH_SIZE;
+		if(gDirAxes[dir][1] < 0) adj_y = region_y - WORLD_PATCH_SIZE;
 
-		neighborp = getRegionFromHandle(adj_handle);
-		if (neighborp)
+		for(S32 offset = 0; offset < width; offset += WORLD_PATCH_SIZE)
 		{
-			//llinfos << "Connecting " << region_x << ":" << region_y << " -> " << adj_x << ":" << adj_y << llendl;
-			regionp->connectNeighbor(neighborp, dir);
+			to_region_handle(adj_x, adj_y, &adj_handle);
+			neighborp = getRegionFromHandle(adj_handle);
+			
+			if (neighborp && last_neighborp != neighborp)
+			{
+				//llinfos << "Connecting " << region_x << ":" << region_y << " -> " << adj_x << ":" << adj_y << " dir:" << dir << llendl;
+				regionp->connectNeighbor(neighborp, dir);
+				last_neighborp = neighborp;
+			}
+
+			if(dir == NORTHEAST ||
+			   dir == NORTHWEST ||
+			   dir == SOUTHWEST ||
+			   dir == SOUTHEAST)
+			{
+				break;
+			}
+
+			if(dir == NORTH || dir == SOUTH) adj_x += WORLD_PATCH_SIZE;
+			if(dir == EAST || dir == WEST) adj_y += WORLD_PATCH_SIZE;
 		}
 	}
 
@@ -409,11 +431,19 @@ LLVector3d	LLWorld::clipToVisibleRegions(const LLVector3d &start_pos, const LLVe
 
 LLViewerRegion* LLWorld::getRegionFromHandle(const U64 &handle)
 {
+	U32 x, y;
+	from_region_handle(handle, &x, &y);
+
 	for (region_list_t::iterator iter = mRegionList.begin();
 		 iter != mRegionList.end(); ++iter)
 	{
 		LLViewerRegion* regionp = *iter;
-		if (regionp->getHandle() == handle)
+		U32 checkRegionX, checkRegionY;
+		F32 checkRegionWidth = regionp->getWidth();
+		from_region_handle(regionp->getHandle(), &checkRegionX, &checkRegionY);
+
+		if (x >= checkRegionX && x < (checkRegionX + checkRegionWidth) &&
+			y >= checkRegionY && y < (checkRegionY + checkRegionWidth))
 		{
 			return regionp;
 		}
@@ -846,7 +876,7 @@ F32 LLWorld::getLandFarClip() const
 
 void LLWorld::setLandFarClip(const F32 far_clip)
 {
-	static S32 const rwidth = (S32)REGION_WIDTH_U32;
+	static S32 const rwidth = (S32)getRegionWidthInMeters();
 	S32 const n1 = (llceil(mLandFarClip) - 1) / rwidth;
 	S32 const n2 = (llceil(far_clip) - 1) / rwidth;
 	bool need_water_objects_update = n1 != n2;
@@ -921,8 +951,10 @@ void LLWorld::updateWaterObjects()
 		return;
 	}
 
+	LLViewerRegion const* regionp = gAgent.getRegion();
+
 	// Region width in meters.
-	S32 const rwidth = (S32)REGION_WIDTH_U32;
+	S32 const rwidth = (S32)regionp->getWidth();
 
 	// The distance we might see into the void
 	// when standing on the edge of a region, in meters.
@@ -939,15 +971,14 @@ void LLWorld::updateWaterObjects()
 	S32 const range = nsims * rwidth;
 
 	// Get South-West corner of current region.
-	LLViewerRegion const* regionp = gAgent.getRegion();
 	U32 region_x, region_y;
 	from_region_handle(regionp->getHandle(), &region_x, &region_y);
 
 	// The min. and max. coordinates of the South-West corners of the Hole water objects.
 	S32 const min_x = (S32)region_x - range;
 	S32 const min_y = (S32)region_y - range;
-	S32 const max_x = (S32)region_x + range;
-	S32 const max_y = (S32)region_y + range;
+	S32 const max_x = (S32)region_x + (rwidth-256) + range;
+	S32 const max_y = (S32)region_y + (rwidth-256) + range;
 
 	// Attempt to determine a sensible water height for all the
 	// Hole Water objects.
@@ -1128,17 +1159,18 @@ void LLWorld::updateWaterObjects()
 	F32 const water_center_z = water_height + box_height / 2;
 
 	// Create new Hole water objects within 'range' where there is no region.
-	for (S32 x = min_x; x <= max_x; x += rwidth)
+	S32 step = REGION_WIDTH_U32;
+	for (S32 x = min_x; x <= max_x; x += step)
 	{
-		for (S32 y = min_y; y <= max_y; y += rwidth)
+		for (S32 y = min_y; y <= max_y; y += step)
 		{
 			U64 region_handle = to_region_handle(x, y);
 			if (!getRegionFromHandle(region_handle))
 			{
 				LLVOWater* waterp = (LLVOWater*)gObjectList.createObjectViewer(LLViewerObject::LL_VO_VOID_WATER, gAgent.getRegion());
 				waterp->setUseTexture(FALSE);
-				waterp->setPositionGlobal(LLVector3d(x + rwidth / 2, y + rwidth / 2, water_center_z));
-				waterp->setScale(LLVector3((F32)rwidth, (F32)rwidth, box_height));
+				waterp->setPositionGlobal(LLVector3d(x + step / 2, y + step / 2, water_center_z));
+				waterp->setScale(LLVector3((F32)step, (F32)step, box_height));
 				gPipeline.createObject(waterp);
 				mHoleWaterObjects.push_back(waterp);
 			}
@@ -1278,9 +1310,21 @@ void process_enable_simulator(LLMessageSystem *msg, void **user_data)
 	// which simulator should we modify?
 	LLHost sim(ip_u32, port);
 
+	U32 region_size_x = 256;
+	msg->getU32Fast(_PREHASH_SimulatorInfo, _PREHASH_RegionSizeX, region_size_x);
+
+	U32 region_size_y = 256;
+	msg->getU32Fast(_PREHASH_SimulatorInfo, _PREHASH_RegionSizeY, region_size_y);
+
+	if (region_size_y == 0 || region_size_x == 0)
+	{
+		region_size_x = 256;
+		region_size_y = 256;
+	}
+
 	// Viewer trusts the simulator.
 	msg->enableCircuit(sim, TRUE);
-	LLWorld::getInstance()->addRegion(handle, sim);
+	LLWorld::getInstance()->addRegion(handle, sim, region_size_x, region_size_y);
 
 	// give the simulator a message it can use to get ip and port
 	llinfos << "simulator_enable() Enabling " << sim << " with code " << msg->getOurCircuitCode() << llendl;

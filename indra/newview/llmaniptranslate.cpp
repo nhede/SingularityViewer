@@ -67,6 +67,7 @@
 #include "llworld.h"
 #include "llui.h"
 #include "pipeline.h"
+#include "hippolimits.h"
 
 // [RLVa:KB]
 #include "rlvhandler.h"
@@ -546,6 +547,9 @@ BOOL LLManipTranslate::handleHover(S32 x, S32 y, MASK mask)
 	if (gSavedSettings.getBOOL("LimitDragDistance"))
 	{
 		F32 max_drag_distance = gSavedSettings.getF32("MaxDragDistance");
+
+		if (max_drag_distance > gHippoLimits->getMaxDragDistance())
+			max_drag_distance = gHippoLimits->getMaxDragDistance();
 
 		if (relative_move.magVecSquared() > max_drag_distance * max_drag_distance)
 		{

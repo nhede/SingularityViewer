@@ -302,6 +302,15 @@ const S32 AGENT_LIST_REGION               = 4;
 // OpenSim Constants (\OpenSim\Region\ScriptEngine\Shared\Api\Runtime\LSL_Constants.cs) 
 // Constants for cmWindlight (\OpenSim\Region\ScriptEngine\Shared\Api\Runtime\CM_Constants.cs) 
 const S32 CHANGED_ANIMATION	        = 16384;
+const S32 CAMERA_FOCUS_OFFSET_X     = 2; // camera constants values added by OpenSim to enhance llSetCameraParams()
+const S32 CAMERA_FOCUS_OFFSET_Y     = 3;
+const S32 CAMERA_FOCUS_OFFSET_Z     = 4;
+const S32 CAMERA_POSITION_X         = 14;
+const S32 CAMERA_POSITION_Y         = 15;
+const S32 CAMERA_POSITION_Z         = 16;
+const S32 CAMERA_FOCUS_X            = 18;
+const S32 CAMERA_FOCUS_Y            = 19;
+const S32 CAMERA_FOCUS_Z            = 20;
 const S32 PARCEL_DETAILS_CLAIMDATE = 10; // used by OpenSim osSetParcelDetails
 const S32 STATS_TIME_DILATION	    = 0;
 const S32 STATS_SIM_FPS 	        = 1;
@@ -324,7 +333,13 @@ const S32 STATS_PENDING_DOWNLOADS   = 17;
 const S32 STATS_PENDING_UPLOADS 	= 18;
 const S32 STATS_ACTIVE_SCRIPTS 	    = 19;
 const S32 STATS_SCRIPT_LPS          = 20;
+const S32 OS_ATTACH_MSG_ALL             = -65535;
+const S32 OS_ATTACH_MSG_INVERT_POINTS   = 1;
+const S32 OS_ATTACH_MSG_OBJECT_CREATOR  = 2;
+const S32 OS_ATTACH_MSG_SCRIPT_CREATOR  = 4;
 // osNPC
+const U32 NPC                                           = 0x20;
+const U32 OS_NPC                                        = 0x01000000;
 const S32 OS_NPC_FLY 	            = 0;
 const S32 OS_NPC_NO_FLY 	        = 1;
 const S32 OS_NPC_LAND_AT_TARGET 	= 2;
@@ -371,6 +386,14 @@ const S32 WL_CLOUD_SCROLL_Y_LOCK	    = 33;
 const S32 WL_CLOUD_SCROLL_X_LOCK	    = 34;
 const S32 WL_DRAW_CLASSIC_CLOUDS	    = 35;
 const S32 WL_SUN_MOON_POSITION	        = 36;
+// Aurora-Sim added WL constants.
+const S32 WL_OK                                 = -1;
+const S32 WL_ERROR                              = -2;
+const S32 WL_ERROR_NO_SCENE_SET                 = -3;
+const S32 WL_ERROR_SCENE_MUST_BE_STATIC         = -4;
+const S32 WL_ERROR_SCENE_MUST_NOT_BE_STATIC     = -5;
+const S32 WL_ERROR_BAD_SETTING                  = -6;
+const S32 WL_ERROR_NO_PRESET_FOUND              = -7;
 // Aurora-Sim Constants  (\Aurora\AuroraDotNetEngine\APIs\AA_Constants.cs) -->
 const S32 BOT_FOLLOW_FLAG_NONE	        = 0;  
 const S32 BOT_FOLLOW_FLAG_INDEFINITELY  = 1;  

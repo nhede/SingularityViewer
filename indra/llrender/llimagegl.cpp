@@ -566,7 +566,8 @@ void LLImageGL::setSize(S32 width, S32 height, S32 ncomponents, S32 discard_leve
 		// Check if dimensions are a power of two!
 		if (!checkSize(width,height))
 		{
-			llerrs << llformat("Texture has non power of two dimension: %dx%d",width,height) << llendl;
+            // Don't error out if texture has non power of two dimensions, just warn us (for aurora non power of two region sizes)
+			llwarns << llformat("Texture has non power of two dimension: %dx%d",width,height) << llendl;
 		}
 		
 		if (mTexName)

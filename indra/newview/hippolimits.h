@@ -15,6 +15,8 @@ public:
 	float getMaxPrimScale()   const { return mMaxPrimScale;   }
 	float getMinPrimScale()   const { return mMinPrimScale;   }
 
+    float getMaxDragDistance() const { return mMaxDragDistance;   }
+
 	void setLimits();
 
 private:
@@ -24,6 +26,7 @@ private:
 	float mMaxHollow;
 	float mMaxPrimScale;
 	float mMinPrimScale;
+	float mMaxDragDistance;
 
 	void setOpenSimLimits();
 	void setAuroraLimits();

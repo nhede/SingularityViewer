@@ -105,7 +105,7 @@ LLNetMap::LLNetMap(const std::string& name) :
 	mUpdateNow( FALSE )
 {
 	mScale = gSavedSettings.getF32("MiniMapScale");
-	mPixelsPerMeter = mScale / LLWorld::getInstance()->getRegionWidthInMeters();
+	mPixelsPerMeter = mScale / REGION_WIDTH_METERS;
 	mDotRadius = llmax(DOT_SCALE * mPixelsPerMeter, MIN_DOT_RADIUS);
 
 	mObjectImageCenterGlobal = gAgentCamera.getCameraPositionGlobal();
@@ -161,13 +161,13 @@ void LLNetMap::setScale( F32 scale )
 		F32 height = (F32)(getRect().getHeight());
 		F32 diameter = sqrt(width * width + height * height);
 		F32 region_widths = diameter / mScale;
-		F32 meters = region_widths * LLWorld::getInstance()->getRegionWidthInMeters();
+		F32 meters = region_widths * REGION_WIDTH_METERS;
 		F32 num_pixels = (F32)mObjectImagep->getWidth();
 		mObjectMapTPM = num_pixels / meters;
 		mObjectMapPixels = diameter;
 	}
 
-	mPixelsPerMeter = mScale / LLWorld::getInstance()->getRegionWidthInMeters();
+	mPixelsPerMeter = mScale / REGION_WIDTH_METERS;
 	mDotRadius = llmax(DOT_SCALE * mPixelsPerMeter, MIN_DOT_RADIUS);
 
 	mUpdateNow = TRUE;
@@ -248,11 +248,12 @@ void LLNetMap::draw()
 		LLColor4 live_region_color = gColors.getColor( "NetMapLiveRegion" );
 		LLColor4 dead_region_color = gColors.getColor( "NetMapDeadRegion" );
 
+		S32 region_width = llround(REGION_WIDTH_METERS);
+
 		for (LLWorld::region_list_t::const_iterator iter = LLWorld::getInstance()->getRegionList().begin();
 			 iter != LLWorld::getInstance()->getRegionList().end(); ++iter)
 		{
 			LLViewerRegion* regionp = *iter;
-			S32 region_width = llround(regionp->getWidth());
 			// Find x and y position relative to camera's center.
 			LLVector3 origin_agent = regionp->getOriginAgent();
 			LLVector3 rel_region_pos = origin_agent - gAgentCamera.getCameraPositionAgent();
@@ -262,8 +263,8 @@ void LLNetMap::draw()
 			// background region rectangle
 			F32 bottom =	relative_y;
 			F32 left =		relative_x;
-			F32 top =		bottom + mScale ;
-			F32 right =		left + mScale ;
+			F32 top =		bottom + (regionp->getWidth() / region_width) * mScale ;
+			F32 right =		left + (regionp->getWidth() / region_width) * mScale ;
 
 			gGL.color4fv(regionp == gAgent.getRegion() ? this_region_color.mV : live_region_color.mV);
 			if (!regionp->isAlive())
@@ -332,8 +333,8 @@ void LLNetMap::draw()
 
 		LLVector3 map_center_agent = gAgent.getPosAgentFromGlobal(mObjectImageCenterGlobal);
 		map_center_agent -= gAgentCamera.getCameraPositionAgent();
-		map_center_agent.mV[0] *= mScale/LLWorld::getInstance()->getRegionWidthInMeters();
-		map_center_agent.mV[1] *= mScale/LLWorld::getInstance()->getRegionWidthInMeters();
+		map_center_agent.mV[0] *= mScale/region_width;
+		map_center_agent.mV[1] *= mScale/region_width;
 
 		gGL.getTexUnit(0)->bind(mObjectImagep);
 		F32 image_half_width = 0.5f*mObjectMapPixels;
@@ -470,7 +471,7 @@ void LLNetMap::draw()
 			dot_width);
 
 		// Draw frustum
-		F32 meters_to_pixels = mScale/ LLWorld::getInstance()->getRegionWidthInMeters();
+		F32 meters_to_pixels = mScale/ REGION_WIDTH_METERS;
 
 		F32 horiz_fov = LLViewerCamera::getInstance()->getView() * LLViewerCamera::getInstance()->getAspect();
 		F32 far_clip_meters = LLViewerCamera::getInstance()->getFar();
@@ -539,6 +540,7 @@ LLVector3 LLNetMap::globalPosToView(const LLVector3d& global_pos, BOOL rotated)
 	LLVector3 pos_local;
 	pos_local.setVec(relative_pos_global);  // convert to floats from doubles
 
+	mPixelsPerMeter = mScale / REGION_WIDTH_METERS;
 	pos_local.mV[VX] *= mPixelsPerMeter;
 	pos_local.mV[VY] *= mPixelsPerMeter;
 	// leave Z component in meters
@@ -597,7 +599,7 @@ LLVector3d LLNetMap::viewPosToGlobal( S32 x, S32 y, BOOL rotated )
 		pos_local.rotVec( rot );
 	}
 
-	pos_local *= ( LLWorld::getInstance()->getRegionWidthInMeters() / mScale );
+	pos_local *= ( REGION_WIDTH_METERS / mScale );
 	
 	LLVector3d pos_global;
 	pos_global.setVec( pos_local );

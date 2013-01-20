@@ -666,6 +666,23 @@ void LLScriptLibrary::init()
 	addFunction(10.f, 0.f, dummy_func, "osAgentSaveAppearance", NULL, "ks");
 	addFunction(10.f, 0.f, dummy_func, "osNpcShout", NULL, "kis");  // May.03.2012
 	addFunction(10.f, 0.f, dummy_func, "osNpcWhisper", NULL, "kis");  // May.03.2012
+	addFunction(10.f, 0.f, dummy_func, "osForceAttachToAvatarFromInventory", NULL, "si" );  // implemented 2012-07-04
+	addFunction(10.f, 0.f, dummy_func, "osNpcTouch", NULL, "kki");  // implemented 2012-07-03
+	addFunction(10.f, 0.f, dummy_func, "osForceAttachToAvatar", NULL, "i"); // implemented 2012-07-09
+	addFunction(10.f, 0.f, dummy_func, "osIsUUID", "i","s"); // implemented 2012-07-20
+	addFunction(10.f, 0.f, dummy_func, "osMin", "f", "ff");  // implemented 2012-07-27
+	addFunction(10.f, 0.f, dummy_func, "osMax", "f", "ff");  // implemented 2012-07-27
+	addFunction(10.f, 0.f, dummy_func, "osGetRezzingObject", "k", NULL);  // implemented 2012-08-02
+	addFunction(10.f, 0.f, dummy_func, "osGetHealth", "f", "k"); // implemented 2012-08-09
+	addFunction(10.f, 0.f, dummy_func, "osSetContentType", NULL, "ks");  // implemented 2012-08-29
+	addFunction(10.f, 0.f, dummy_func, "osGetNumberOfAttachments", "l", "kl");  // implemented 2012-08-31
+	addFunction(10.f, 0.f, dummy_func, "osMessageAttachments", NULL, "ksli");  // implemented 2012-08-31
+	addFunction(10.f, 0.f, dummy_func, "osDropAttachment", NULL, NULL);  // implemented 2012-07-31
+	addFunction(10.f, 0.f, dummy_func, "osDropAttachmentAt", NULL, "vr");  // implemented 2012-07-31
+	addFunction(10.f, 0.f, dummy_func, "osForceDropAttachment", NULL, NULL);  // implemented 2012-08-01
+	addFunction(10.f, 0.f, dummy_func, "osForceDropAttachmentAt", NULL, "vr");  // implemented 2012-08-01
+	addFunction(10.f, 0.f, dummy_func, "osListenRegex", "i", "issi");  // implemented 2012-10-23
+	addFunction(10.f, 0.f, dummy_func, "osRegexIsMatch", "i", "ss");  // implemented 2012-10-23
 //
 // OSSL Functions Aurora-Sim Unique
 	addFunction(10.f, 0.f, dummy_func, "osReturnObject", NULL, "k");
@@ -713,6 +730,14 @@ void LLScriptLibrary::init()
 	addFunction(10.f, 0.f, dummy_func, "aaGetTextColor", "r", NULL);
 	addFunction(10.f, 0.f, dummy_func, "aaSetEnv", NULL, "sl");
 	addFunction(10.f, 0.f, dummy_func, "aaGetIsInfiniteRegion", "i", NULL);
+	addFunction(10.f, 0.f, dummy_func, "aaAllRegionInstanceSay", NULL, "is");  // Implemented Jul.08.2012
+	addFunction(10.f, 0.f, dummy_func, "aaWindlightGetSceneIsStatic", "i", NULL);  // Implemented Jul.08.2012
+	addFunction(10.f, 0.f, dummy_func, "aaWindlightGetSceneDayCycleKeyFrameCount", "i", NULL);  // Implemented Jul.08.2012
+	addFunction(10.f, 0.f, dummy_func, "aaWindlightGetDayCycle", "l", NULL);  // Implemented Jul.08.2012
+	addFunction(10.f, 0.f, dummy_func, "aaWindlightAddDayCycleFrame", "i", "fi");  // Implemented Jul.08.2012
+	addFunction(10.f, 0.f, dummy_func, "aaWindlightRemoveDayCycleFrame", "i", "i");  // Implemented Jul.08.2012
+	addFunction(10.f, 0.f, dummy_func, "aaWindlightGetScene", "l", "il");  // POLYMORPHIC   // Implemented Jul.08.2012
+	addFunction(10.f, 0.f, dummy_func, "aaWindlightSetScene", "i", "il");  // POLYMORPHIC   // Implemented Jul.08.2012
 // botFunctions   Aurora-Sim ONLY
 	addFunction(10.f, 0.f, dummy_func, "botGetWaitingTime", "v", "i");
 	addFunction(10.f, 0.f, dummy_func, "botSetMap", NULL, "slii");

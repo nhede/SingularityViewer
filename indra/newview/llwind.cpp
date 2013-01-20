@@ -52,6 +52,9 @@
 #include "llagent.h"
 #include "llworld.h"
 
+#include "llviewerregion.h"
+#include "llagent.h"
+
 const F32 CLOUD_DIVERGENCE_COEF = 0.5f; 
 
 
@@ -121,12 +124,12 @@ void LLWind::decompress(LLBitPack &bitpack, LLGroupHeader *group_headerp)
 	set_group_of_patch_header(group_headerp);
 
 	// X component
-	decode_patch_header(bitpack, &patch_header);
+	decode_patch_header(bitpack, &patch_header, FALSE);
 	decode_patch(bitpack, buffer);
 	decompress_patch(mVelX, buffer, &patch_header);
 
 	// Y component
-	decode_patch_header(bitpack, &patch_header);
+	decode_patch_header(bitpack, &patch_header, FALSE);
 	decode_patch(bitpack, buffer);
 	decompress_patch(mVelY, buffer, &patch_header);
 
@@ -254,7 +257,7 @@ LLVector3 LLWind::getVelocity(const LLVector3 &pos_region)
 
 	LLVector3 pos_clamped_region(pos_region);
 	
-	F32 region_width_meters = LLWorld::getInstance()->getRegionWidthInMeters();
+	F32 region_width_meters = gAgent.getRegion()->getWidth();
 
 	if (pos_clamped_region.mV[VX] < 0.f)
 	{

@@ -49,6 +49,8 @@
 #include "llregionflags.h"
 #include "llworldmapmessage.h"
 #include "hippogridmanager.h"
+#include "llappviewer.h"
+#include "lltexturecache.h"
 
 bool LLWorldMap::sGotMapURL =  false;
 // Timers to temporise database requests
@@ -91,12 +93,21 @@ LLSimInfo::LLSimInfo(U64 handle)
 
 void LLSimInfo::setLandForSaleImage (LLUUID image_id) 
 {
+	LLPointer<LLViewerFetchedTexture> mOverlayImage;
+	if (mMapImageID[SIM_LAYER_OVERLAY].isNull() && image_id.notNull()) {
+		mOverlayImage = LLViewerTextureManager::findFetchedTexture(image_id);
+		if(mOverlayImage.notNull()) {
+			LLAppViewer::getTextureCache()->removeFromCache(image_id);
+		}
+	}
+
 	mMapImageID[SIM_LAYER_OVERLAY] = image_id;
 
 	// Fetch the image
 	if (mMapImageID[SIM_LAYER_OVERLAY].notNull())
 	{
 		mLayerImage[SIM_LAYER_OVERLAY] = LLViewerTextureManager::getFetchedTexture(mMapImageID[SIM_LAYER_OVERLAY], MIPMAP_TRUE, LLViewerTexture::BOOST_MAP, LLViewerTexture::LOD_TEXTURE);
+		mLayerImage[SIM_LAYER_OVERLAY]->forceImmediateUpdate();
 		mLayerImage[SIM_LAYER_OVERLAY]->setAddressMode(LLTexUnit::TAM_CLAMP);
 	}
 	else
@@ -375,10 +386,25 @@ LLSimInfo* LLWorldMap::simInfoFromPosGlobal(const LLVector3d& pos_global)
 
 LLSimInfo* LLWorldMap::simInfoFromHandle(const U64 handle)
 {
-	sim_info_map_t::iterator it = mSimInfoMap.find(handle);
-	if (it != mSimInfoMap.end())
+	std::map<U64, LLSimInfo*>::const_iterator it;
+	for (it = LLWorldMap::getInstance()->mSimInfoMap.begin(); it != LLWorldMap::getInstance()->mSimInfoMap.end(); ++it)
 	{
-		return it->second;
+		const U64 hndl = (*it).first;
+		LLSimInfo* info = (*it).second;
+		if(hndl == handle)
+		{
+			return info;
+		}
+		U32 x = 0, y = 0;
+		from_region_handle(handle, &x, &y);
+		U32 checkRegionX, checkRegionY;
+		from_region_handle(hndl, &checkRegionX, &checkRegionY);
+
+		if(x >= checkRegionX && x < (checkRegionX + info->getSizeX()) &&
+			y >= checkRegionY && y < (checkRegionY + info->getSizeY()))
+		{
+			return info;
+		}
 	}
 	return NULL;
 }
@@ -512,7 +538,8 @@ bool LLWorldMap::useWebMapTiles()
 {
 	static const LLCachedControl<bool> use_web_map_tiles("UseWebMapTiles",false);
 	return use_web_map_tiles &&
-		   (( gHippoGridManager->getConnectedGrid()->isSecondLife() || sGotMapURL));
+		   (( gHippoGridManager->getConnectedGrid()->isSecondLife() || sGotMapURL)) &&
+		   !gHippoGridManager->getConnectedGrid()->isAurora();
 }
 
 void LLWorldMap::reloadItems(bool force)

@@ -303,7 +303,7 @@ void init_start_screen(S32 location_id);
 void release_start_screen();
 void reset_login();
 void apply_udp_blacklist(const std::string& csv);
-bool process_login_success_response(std::string &password);
+bool process_login_success_response(std::string &password, U32 &first_sim_size_x, U32 &first_sim_size_y);
 
 void callback_cache_name(const LLUUID& id, const std::string& full_name, bool is_group)
 {
@@ -391,6 +391,9 @@ bool idle_startup()
 	static LLUUID web_login_key;
 	static std::string password;
 	static std::vector<const char*> requested_options;
+
+	static U32 first_sim_size_x = 256;
+	static U32 first_sim_size_y = 256;
 
 	static LLVector3 initial_sun_direction(1.f, 0.f, 0.f);
 	static LLVector3 agent_start_position_region(10.f, 10.f, 10.f);		// default for when no space server
@@ -1580,7 +1583,7 @@ bool idle_startup()
 		if (successful_login)
 		{
 			// unpack login data needed by the application
-			if(process_login_success_response(password))
+			if(process_login_success_response(password,first_sim_size_x,first_sim_size_y))
 			{
 				std::string name = firstname;
 				if (!gHippoGridManager->getCurrentGrid()->isSecondLife() ||
@@ -1692,7 +1695,7 @@ bool idle_startup()
 		gAgent.initOriginGlobal(from_region_handle(gFirstSimHandle));
 		display_startup();
 
-		LLWorld::getInstance()->addRegion(gFirstSimHandle, gFirstSim);
+		LLWorld::getInstance()->addRegion(gFirstSimHandle, gFirstSim, first_sim_size_x, first_sim_size_y);
 		display_startup();
 
 		LLViewerRegion *regionp = LLWorld::getInstance()->getRegionFromHandle(gFirstSimHandle);
@@ -4050,7 +4053,7 @@ bool LLStartUp::startLLProxy()
 
 	return proxy_ok;
 }
-bool process_login_success_response(std::string& password)
+bool process_login_success_response(std::string& password, U32 &first_sim_size_x, U32 &first_sim_size_y)
 {
 	LLSD response = LLUserAuth::getInstance()->getResponse();
 
@@ -4183,6 +4186,16 @@ bool process_login_success_response(std::string& password)
 		gFirstSimHandle = to_region_handle(region_x, region_y);
 	}
 	
+	text = response["region_size_x"].asString();
+	if(!text.empty()) {
+		first_sim_size_x = strtoul(text.c_str(), NULL, 10);
+		LLViewerParcelMgr::getInstance()->init(first_sim_size_x);
+	}
+
+	//region Y size is currently unused, major refactoring required. - Patrick Sapinski (2/10/2011)
+	text = response["region_size_y"].asString();
+	if(!text.empty()) first_sim_size_y = strtoul(text.c_str(), NULL, 10);
+
 	const std::string look_at_str = response["look_at"];
 	if (!look_at_str.empty())
 	{
@@ -4266,6 +4279,22 @@ bool process_login_success_response(std::string& password)
 		gSavedSettings.setString("MapServerURL", map_server_url);
 		LLWorldMap::gotMapServerURL(true);
 	}
+
+	std::string web_profile_url = response["web_profile_url"];
+	if(!web_profile_url.empty())
+	{
+		// We got an answer from the grid -> use that for map for the current session
+		gSavedSettings.setString("WebProfileURL", web_profile_url); 
+		LL_INFOS("LLStartup") << "web_profile_url : we got an answer from the grid : " << web_profile_url << LL_ENDL;
+	}
+	else
+	{
+		// No answer from the grid -> use the default setting for current session 
+		web_profile_url = "https://my.secondlife.com/[AGENT_NAME]";
+		gSavedSettings.setString("WebProfileURL", web_profile_url); 
+		LL_INFOS("LLStartup") << "web_profile_url : no web_profile_url answer, we use the default setting for the web : " << web_profile_url << LL_ENDL;
+	}
+
 	// Initial outfit for the user.
 	LLSD initial_outfit = response["initial-outfit"][0];
 	if(initial_outfit.size())
